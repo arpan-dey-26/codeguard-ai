@@ -1,0 +1,384 @@
+# CodeGuard AI — continuous integration.
+#
+# Two independent jobs so a frontend failure does not hide a backend failure
+# and both report in parallel.
+#
+# No AI API key is present in this workflow, and no external AI call is made.
+# From Phase 3 the Gemini integration is real, so this is enforced rather than
+# assumed: every provider test drives httpx.MockTransport, the provider raises
+# ConfigurationError when no key is set, and the step below fails the build if
+# a credential ever appears in the environment.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch cancels the previous run — CI minutes spent on
+# a superseded commit are wasted.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # A real PostgreSQL, not SQLite. The design depends on
+      # FOR UPDATE SKIP LOCKED, partial indexes, JSONB and TIMESTAMPTZ — none
+      # of which SQLite has. Testing against a different database than
+      # production tests a different system (architecture.md §25.3).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: codeguard
+          POSTGRES_PASSWORD: codeguard
+          POSTGRES_DB: codeguard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U codeguard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql+asyncpg://codeguard:codeguard@localhost:5432/codeguard_test
+      TEST_DATABASE_URL: postgresql+asyncpg://codeguard:codeguard@localhost:5432/codeguard_test
+      AI_PROVIDER: gemini
+      # A model id is set but no key: it proves the provider is selected and
+      # constructed in CI while remaining unable to call anything.
+      GEMINI_MODEL: gemini-ci-placeholder
+      # The dashboard API fails closed outside development. APP_ENV=test opens
+      # it for the API tests without needing the escape-hatch flag, which is
+      # deliberately never set in CI.
+      DASHBOARD_ALLOW_UNAUTHENTICATED_READS: "false"
+      # Deliberately absent: GITHUB_APP_ID, GITHUB_PRIVATE_KEY,
+      # GITHUB_WEBHOOK_SECRET, GEMINI_API_KEY, CLAUDE_API_KEY,
+      # GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET. No phase needs
+      # them. Both GitHub and Gemini HTTP are served by httpx.MockTransport,
+      # the App private key used in tests is a throwaway RSA key generated at
+      # run time, and the OAuth flow is exercised against a mock transport.
+      #
+      # SESSION_SECRET is likewise absent: APP_ENV=test generates an ephemeral
+      # per-process key, which is the correct behaviour to exercise. A CI
+      # secret here would prove nothing and would be one more credential to
+      # rotate.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # `parsers` brings the Tree-sitter grammars, so CI exercises the
+          # JavaScript, TypeScript and Java adapters for real rather than
+          # letting them report PARSER_UNAVAILABLE.
+          pip install -e ".[dev,parsers]"
+
+      - name: Lint (ruff)
+        run: ruff check app tests
+
+      - name: Format check (ruff)
+        run: ruff format --check app tests
+
+      - name: Type check (mypy)
+        run: mypy app
+
+      - name: Migrations — upgrade
+        run: alembic upgrade head
+
+      - name: Migrations — downgrade and re-upgrade
+        # Reversibility is verified from the first commit rather than
+        # discovered to be broken at migration fifteen.
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Tests
+        run: pytest
+
+      - name: Assert production refuses to start when it is not secure
+        # The strongest guarantee in the system is the one that stops the
+        # process. Checked as a behaviour rather than trusted as a convention,
+        # because every item below is one somebody will eventually forget.
+        run: |
+          python - <<'PY'
+          from pydantic import ValidationError
+          from app.core.config import Settings
+
+          BASE = dict(
+              app_env="production",
+              debug=False,
+              database_url="postgresql+asyncpg://u:p@db.internal:5432/codeguard",
+              session_secret="x" * 48,
+              trusted_hosts="api.example.com",
+              public_base_url="https://api.example.com",
+              frontend_url="https://app.example.com",
+          )
+
+          # A complete configuration must start, or every negative case below
+          # would pass for the wrong reason.
+          Settings(**BASE)
+
+          CASES = {
+              "no session secret": dict(BASE, session_secret=None),
+              "short session secret": dict(BASE, session_secret="short"),
+              "wildcard trusted hosts": dict(BASE, trusted_hosts="*"),
+              "no public base url": dict(BASE, public_base_url=None),
+              "plain http frontend": dict(BASE, frontend_url="http://app.example.com"),
+              "development database url": dict(
+                  BASE,
+                  database_url=(
+                      "postgresql+asyncpg://codeguard:codeguard@localhost:5432/codeguard"
+                  ),
+              ),
+              "unauthenticated reads enabled": dict(
+                  BASE, dashboard_allow_unauthenticated_reads=True
+              ),
+              "debug on": dict(BASE, debug=True),
+          }
+
+          for name, kwargs in CASES.items():
+              try:
+                  Settings(**kwargs)
+              except ValidationError:
+                  print(f"  refused: {name}")
+              else:
+                  raise SystemExit(f"::error::production started with {name}")
+          print("Production fails closed on every unsafe configuration.")
+          PY
+
+      - name: Assert the dashboard cannot be read without a session
+        run: |
+          python - <<'PY'
+          from app.api.scope import resolve_scope
+          from app.core.config import Settings
+          from app.core.errors import AuthenticationRequiredError
+
+          settings = Settings(
+              app_env="development",
+              github_oauth_client_id="Iv1.ci",
+              github_oauth_client_secret="s" * 40,
+              session_secret="x" * 48,
+          )
+          try:
+              resolve_scope(settings, None)
+          except AuthenticationRequiredError:
+              print("An unauthenticated dashboard request is a 401.")
+          else:
+              raise SystemExit("::error::the dashboard served an unauthenticated caller.")
+          PY
+
+      - name: Assert no route can be reached without resolving a scope
+        # Structural, not behavioural: every dashboard route depends on
+        # ScopeDep, so a new endpoint cannot forget to authenticate. This
+        # catches somebody adding a router that does not.
+        run: |
+          python - <<'PY'
+          import ast, pathlib
+
+          routes = pathlib.Path("app/api/v1/dashboard")
+          offenders = []
+          for path in sorted(routes.glob("*.py")):
+              if path.name in ("__init__.py", "common.py"):
+                  continue
+              tree = ast.parse(path.read_text())
+              for fn in ast.walk(tree):
+                  if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                      continue
+                  decorated = any(
+                      isinstance(d, ast.Call)
+                      and isinstance(d.func, ast.Attribute)
+                      and d.func.attr in {"get", "post", "patch", "delete"}
+                      for d in fn.decorator_list
+                  )
+                  if not decorated:
+                      continue
+                  annotations = {
+                      ast.unparse(a.annotation)
+                      for a in fn.args.args + fn.args.kwonlyargs
+                      if a.annotation is not None
+                  }
+                  if "ScopeDep" not in annotations:
+                      offenders.append(f"{path.name}:{fn.name}")
+          if offenders:
+              raise SystemExit(f"::error::routes with no ViewerScope: {offenders}")
+          print("Every dashboard route resolves a scope.")
+          PY
+
+      - name: Assert no external credentials were required
+        # A guard against the slow drift where a test quietly starts needing a
+        # real secret and CI starts needing one too.
+        run: |
+          for var in GITHUB_APP_ID GITHUB_PRIVATE_KEY GITHUB_WEBHOOK_SECRET \
+                     GEMINI_API_KEY CLAUDE_API_KEY SESSION_SECRET \
+                     GITHUB_OAUTH_CLIENT_ID GITHUB_OAUTH_CLIENT_SECRET; do
+            if [ -n "${!var:-}" ]; then
+              echo "::error::$var is set in CI. No phase may require it."
+              exit 1
+            fi
+          done
+          echo "No GitHub App or AI credentials present — as intended."
+
+      - name: Assert no live provider call can be made from the test suite
+        # Phase 3 ships a real Gemini integration. The guarantee that the suite
+        # never reaches the live API is that every provider test constructs
+        # httpx.MockTransport; a test that built a bare AsyncClient would leave
+        # the sandbox.
+        run: |
+          if grep -rn "httpx.AsyncClient(" tests/ | grep -v "MockTransport"; then
+            echo "::error::A test builds an httpx client with no mock transport."
+            exit 1
+          fi
+          echo "Every test HTTP client is mock-backed."
+
+      - name: Webhook replay harness smoke test
+        # Proves the harness imports production signing code and refuses to
+        # run without a secret.
+        working-directory: .
+        run: |
+          GITHUB_WEBHOOK_SECRET=ci-smoke-secret \
+            python infrastructure/scripts/replay_webhook.py \
+              --payload infrastructure/scripts/sample_payloads/pull_request_opened.json \
+              --print-only
+          if env -u GITHUB_WEBHOOK_SECRET python infrastructure/scripts/replay_webhook.py \
+               --payload infrastructure/scripts/sample_payloads/pull_request_opened.json \
+               --print-only 2>/dev/null; then
+            echo "::error::The harness ran without a secret."
+            exit 1
+          fi
+          echo "Harness refuses to run unsigned, as intended."
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        # `npm ci` rather than `npm install`: it installs exactly the
+        # lockfile and fails if package.json and the lockfile disagree.
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "." pip-audit
+      - name: Audit runtime dependencies
+        # Runtime only. Auditing the dev toolchain reports vulnerabilities in
+        # things that never ship, which trains people to ignore the output.
+        run: pip-audit --strict --progress-spinner off
+
+  docker-build:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the runtime image
+        run: docker build --target runtime -t codeguard-ai:ci ./backend
+      - name: Assert the image does not run as root
+        run: |
+          user=$(docker run --rm codeguard-ai:ci id -u)
+          if [ "$user" = "0" ]; then
+            echo "::error::the runtime image runs as root"
+            exit 1
+          fi
+          echo "Runtime image runs as uid $user."
+      - name: Assert the development toolchain is not in the runtime image
+        # It used to be: the builder installed `.[dev]`, so pytest, ruff and
+        # mypy shipped to production. Every one of those is attack surface in
+        # exchange for nothing.
+        run: |
+          for pkg in pytest ruff mypy; do
+            if docker run --rm codeguard-ai:ci python -c "import $pkg" 2>/dev/null; then
+              echo "::error::$pkg is present in the runtime image"
+              exit 1
+            fi
+          done
+          echo "No development toolchain in the runtime image."
+      - name: Assert no secret was baked into the image
+        run: |
+          if docker run --rm codeguard-ai:ci sh -c 'ls -a /app' | grep -qx '.env'; then
+            echo "::error::.env is present in the image"
+            exit 1
+          fi
+          if docker run --rm codeguard-ai:ci sh -c 'ls -a /app' | grep -qx '.git'; then
+            echo "::error::.git is present in the image"
+            exit 1
+          fi
+          echo "No .env or .git in the image."
+
+  secrets-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify no .env file is committed
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is committed. Remove it and rotate every credential it contained."
+            exit 1
+          fi
+          echo "No committed .env found."
+      - name: Verify no private key material is committed
+        run: |
+          if git grep -I -l -E "BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY" -- . ':!*.md' ':!.github/*'; then
+            echo "::error::Private key material found in the repository."
+            exit 1
+          fi
+          echo "No private key material found."

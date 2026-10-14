@@ -1,0 +1,38 @@
+{
+  "action": "opened",
+  "issue": {
+    "id": 1,
+    "number": 7,
+    "title": "Something is broken"
+  },
+  "repository": {
+    "id": 550001,
+    "name": "widget-service",
+    "full_name": "acme-demo/widget-service",
+    "private": false,
+    "default_branch": "main",
+    "language": "Python",
+    "owner": {
+      "id": 440001,
+      "login": "acme-demo",
+      "type": "Organization"
+    }
+  },
+  "installation": {
+    "id": 77000001,
+    "account": {
+      "id": 440001,
+      "login": "acme-demo",
+      "type": "Organization"
+    },
+    "repository_selection": "selected",
+    "permissions": {
+      "contents": "read",
+      "metadata": "read",
+      "pull_requests": "write"
+    },
+    "events": [
+      "pull_request"
+    ]
+  }
+}

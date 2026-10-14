@@ -1,0 +1,223 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface text-content font-sans antialiased;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* A visible focus ring on every interactive element. Removing the outline
+     without replacing it makes the app unusable by keyboard, which is the
+     most common accessibility regression in dashboards. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
+
+  code,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  /* ------------------------------------------------------------- surfaces
+   *
+   * `.panel` is the one card treatment in the application. Every dashboard
+   * card, finding card and chart frame is this class plus content — which is
+   * what stops eleven pages from each inventing a slightly different border
+   * radius and shadow.
+   *
+   * The `::before` is a 1px top highlight. In dark mode a cast shadow is
+   * almost invisible against a near-black page, so depth has to come from the
+   * lit edge instead — the same trick a physical bevel uses. It is
+   * `pointer-events: none` and purely decorative.
+   */
+  .panel {
+    @apply relative rounded-lg border border-border bg-surface-raised;
+    box-shadow: var(--shadow-flat);
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.07) 20%,
+      rgb(255 255 255 / 0.07) 80%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  :root[data-theme='light'] .panel::before {
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.9), transparent);
+  }
+
+  /* An interactive panel: lifts on hover, settles on press. Transform and
+     box-shadow only — no width, height, margin or top/left, so nothing here
+     can trigger layout. */
+  .panel-interactive {
+    transition:
+      transform var(--dur-quick) var(--ease-out),
+      box-shadow var(--dur-quick) var(--ease-out),
+      border-color var(--dur-quick) var(--ease-out);
+    /* Deliberately no `will-change` (v0.6.2). It was here, and it was wrong:
+       this class lands on every card in a list, so a page of forty findings
+       asked the compositor for forty permanently promoted layers — real memory,
+       for a 2px translate the browser promotes on its own the moment the
+       transition starts. `will-change` is kept for `.tilt-plane` below, which is
+       one element being rewritten on every pointer move and is the case the
+       property exists for. */
+  }
+
+  @media (hover: hover) {
+    .panel-interactive:hover {
+      transform: translate3d(0, -2px, 0);
+      box-shadow: var(--shadow-raise);
+      border-color: rgb(var(--accent) / 0.34);
+    }
+  }
+
+  .panel-interactive:active {
+    transform: translate3d(0, 0, 0);
+    box-shadow: var(--shadow-flat);
+  }
+
+  /* ----------------------------------------------------------------- tilt
+   *
+   * Pointer-tracked depth, driven by two variables the `TiltCard` component
+   * writes. Capped at a deliberately small angle: the effect should read as
+   * "this responds to me", never as a toy. Text stays flat — only the card
+   * plane rotates — because rotating type is what makes these effects feel
+   * cheap and hurts legibility.
+   */
+  .tilt-root {
+    perspective: 1000px;
+  }
+
+  .tilt-plane {
+    transform-style: preserve-3d;
+    transform: rotateX(calc(var(--tilt-y, 0) * -3.2deg))
+      rotateY(calc(var(--tilt-x, 0) * 3.2deg));
+    transition: transform var(--dur-quick) var(--ease-out);
+    will-change: transform;
+  }
+
+  /* A soft highlight that follows the pointer across the card. Sits above the
+     surface and below the content. */
+  .tilt-sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-quick) var(--ease-out);
+    background: radial-gradient(
+      380px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+      rgb(var(--accent) / 0.1),
+      transparent 62%
+    );
+  }
+
+  @media (hover: hover) {
+    .tilt-root:hover .tilt-sheen {
+      opacity: 1;
+    }
+  }
+
+  /* ------------------------------------------------------------ entrances
+   *
+   * A stagger without a JavaScript timeline: the element sets `--stagger` to
+   * its index and the delay falls out of it. 45ms apart is enough to read as
+   * a sequence and short enough that the last item is not still waiting.
+   */
+  .stagger {
+    animation: rise-in var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger, 0) * 45ms);
+  }
+
+  /* A hairline that fades out at both ends — for section dividers, where a
+     full-width 1px rule reads as heavier than it is. */
+  .rule-fade {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--border)) 12%,
+      rgb(var(--border)) 88%,
+      transparent
+    );
+  }
+
+  /* The hero's backdrop: one radial wash plus a grid, both masked so they fade
+     before they reach the content. Static — no animated background behind
+     text, ever. */
+  .hero-field {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(60% 50% at 18% 0%, rgb(var(--accent) / 0.1), transparent 70%),
+      linear-gradient(to right, rgb(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--border) / 0.5) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      56px 56px,
+      56px 56px;
+    mask-image: radial-gradient(120% 90% at 30% 0%, black, transparent 72%);
+  }
+}
+
+/* ------------------------------------------------------------ reduced motion
+ *
+ * The previous version collapsed durations to 0.01ms, which handles
+ * transitions and keyframes but leaves the two things that actually cause
+ * trouble: infinite animations (still running, just instantly) and
+ * pointer-driven transforms (never a transition, so never affected).
+ *
+ * This turns all four off. Everything remains fully usable: the entrances end
+ * in their final state rather than being skipped, hover still changes colour
+ * and elevation, and no state in the application is communicated by motion
+ * alone.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* No parallax, no pointer tilt, no drift. */
+  .tilt-plane,
+  .panel-interactive:hover,
+  .panel-interactive:active {
+    transform: none !important;
+  }
+
+  .tilt-sheen {
+    display: none !important;
+  }
+
+  .hero-field {
+    /* The grid and wash stay — they are static decoration, not motion. */
+    animation: none !important;
+  }
+}

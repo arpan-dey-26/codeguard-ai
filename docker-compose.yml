@@ -1,0 +1,144 @@
+# CodeGuard AI — local development environment.
+#
+# ============================================================================
+# THIS IS A DEVELOPMENT DATABASE. DO NOT COPY IT INTO PRODUCTION. (v0.6.1)
+#
+# The `db` service below runs PostgreSQL as a single superuser whose password
+# is written in this file in plain text, with no roles, no grants and no least
+# privilege whatsoever. It is a convenience for running the project on a
+# laptop and nothing else.
+#
+# Production uses three roles — `codeguard_migrate` (DDL), `codeguard_app`
+# (DML only) and `codeguard_readonly` — created by
+# `infrastructure/sql/least_privilege.sql` and described in
+# `docs/deployment.md` §5. None of that is applied here, and the service shape
+# below must not be read as evidence that it is. A real deployment points
+# DATABASE_URL at a managed database with backups that have been restored at
+# least once. `docker-compose.prod.yml` does include a `db` service, and says
+# in its own header that it is there "so the file runs" — it is a reference
+# topology, not a recommendation to run your production database as a
+# container in a compose file.
+# ============================================================================
+#
+# The API/worker topology, by contrast, DOES match architecture.md §5.2 — one
+# image, two commands:
+#
+#     db        PostgreSQL 16
+#     api       FastAPI (uvicorn)          ← same image as worker
+#     worker    background process          ← same image as api
+#
+# Deliberately absent: Redis, Celery, a message broker, an orchestrator.
+# PostgreSQL is the durable job queue (from Phase 1), so there is no second
+# datastore to run, secure or keep consistent.
+#
+# The API and the worker run from ONE image with different commands. That is
+# what makes "the worker is running different code than the API" structurally
+# impossible, and it is why the worker exists as a service from day one even
+# though it has no jobs to process yet.
+#
+# The frontend is NOT containerised. Vite's dev server is faster on the host,
+# and in production the SPA is static files on a CDN — there is no frontend
+# container to mirror.
+
+name: codeguard-ai
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: codeguard-db
+    environment:
+      POSTGRES_USER: codeguard
+      POSTGRES_PASSWORD: codeguard # local development only; never a real secret
+      POSTGRES_DB: codeguard
+    ports:
+      # Bound to loopback. Without the explicit address Docker publishes on
+      # 0.0.0.0, so a developer on an untrusted network exposes a database
+      # whose password is written in this file.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Dependent services wait for readiness, not merely for the container to
+      # start. Without this, the API races the database on every `up`.
+      test: ["CMD-SHELL", "pg_isready -U codeguard -d codeguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: codeguard-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+      DATABASE_URL: postgresql+asyncpg://codeguard:codeguard@db:5432/codeguard
+      FRONTEND_URL: http://localhost:5173
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      # Passed through from the host .env when present. Absent is fine:
+      # Phase 0 makes no AI call and the service starts without a key.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-}
+      # Phase 5 sign-in. Absent is fine: the API starts, `/health` reports
+      # `oauth_configured: false`, and the SPA shows sign-in as unavailable
+      # rather than failing in a way that looks like a bug.
+      PUBLIC_BASE_URL: http://localhost:8000
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
+      GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-}
+      # Unset in development on purpose: the process generates an ephemeral key
+      # and says so in the log. A shared constant here would be a real signing
+      # key published in this repository.
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_PRIVATE_KEY: ${GITHUB_PRIVATE_KEY:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: codeguard-worker
+    command: python -m app.worker
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+      DATABASE_URL: postgresql+asyncpg://codeguard:codeguard@db:5432/codeguard
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      # Must exceed WORKER_SHUTDOWN_DRAIN_SECONDS below, or the drain is
+      # pointless — the process is killed while it is still draining.
+      WORKER_SHUTDOWN_DRAIN_SECONDS: "60"
+    volumes:
+      - ./backend:/app
+    # Docker's default SIGTERM grace is 10 seconds. A review job routinely
+    # outlives that (the Gemini timeout alone is 90s), so without this the
+    # worker is SIGKILLed mid-handler and its job sits `running` until the
+    # visibility-timeout sweep reclaims it fifteen minutes later.
+    stop_grace_period: 90s
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

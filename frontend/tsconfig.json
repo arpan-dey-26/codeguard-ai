@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Strict mode, plus the three checks that are off by default and catch
+       the errors that actually reach production. */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+
+    /* No `baseUrl`. TypeScript 6 reports it as deprecated and exits non-zero,
+       which broke `npm run typecheck`, `npm run test` and `npm run build`
+       outright on a machine with a current toolchain (v0.6.1). Since
+       TypeScript 5.0 a relative `paths` entry resolves against the directory
+       holding this file, so the alias below needs no `baseUrl` and behaves
+       identically on 5.x and 6.x. `vite.config.ts` declares the same alias
+       separately for the bundler. */
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", "vite.config.ts", "eslint.config.js"]
+}

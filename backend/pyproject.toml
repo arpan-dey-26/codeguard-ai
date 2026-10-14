@@ -1,0 +1,168 @@
+[project]
+name = "codeguard-backend"
+version = "0.6.2"
+description = "CodeGuard AI backend — AI-powered GitHub code review and code quality monitoring"
+requires-python = ">=3.12"
+
+# Phase 0 keeps the dependency surface deliberately small.
+# Every entry below is used by code that exists today; nothing is added
+# "for later". See docs/decisions/ADR-0004-dependency-minimalism.md.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "structlog>=24.4",
+    "httpx>=0.27",
+    # GitHub App auth requires RS256. Hand-rolling JWT signing is a security
+    # anti-pattern, so this is the one new runtime dependency in Phase 1.
+    "pyjwt[crypto]>=2.9",
+]
+
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+# Tree-sitter grammars for JavaScript, TypeScript and Java. Optional on
+# purpose: Python analysis uses the standard library's `ast` and works without
+# them, and an adapter whose grammar is absent reports PARSER_UNAVAILABLE
+# rather than failing. Install with: pip install -e ".[dev,parsers]"
+parsers = [
+    "tree-sitter>=0.23",
+    "tree-sitter-python>=0.23",
+    "tree-sitter-javascript>=0.23",
+    "tree-sitter-typescript>=0.23",
+    "tree-sitter-java>=0.23",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+# ---------------------------------------------------------------------------
+# Ruff — linting and formatting in one tool (replaces black + isort + flake8)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "TID",  # tidy imports
+    "RUF",  # ruff-specific
+    "S",    # flake8-bandit (security)
+]
+ignore = [
+    "S101",  # assert is fine in tests
+]
+
+# Prose in this codebase uses en dashes and typographic quotes deliberately.
+# RUF001-003 exist to catch homoglyph attacks in identifiers, not to enforce
+# ASCII in comments — so the characters actually used are allow-listed rather
+# than the rules disabled, which keeps a genuinely confusable character (a
+# Cyrillic "а" in an identifier, say) flagged.
+# En dash and typographic quotes are used deliberately in prose throughout this
+# codebase. Allow-listing the specific characters keeps RUF001-003 doing the job
+# they exist for — catching a Cyrillic homoglyph in an identifier — instead of
+# being switched off.
+allowed-confusables = ["\u2013", "\u2014", "\u2018", "\u2019", "\u201c", "\u201d"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.lint.pycodestyle]
+# Long URLs and long SQL fragments in comments are not worth folding; code is
+# still held to the 100-column limit.
+max-line-length = 110
+
+[tool.ruff.lint.per-file-ignores]
+# Hard-coded dummy secrets in fixtures are intentional, and a test that seeds a
+# deterministic PRNG is testing jitter, not generating a key.
+"tests/**" = ["S105", "S106", "S311", "S608"]
+
+# S608 flags f-string SQL construction. Every occurrence in these two modules is
+# deliberate and is the design recorded in docs/phase-4.md: the *structure* of a
+# query (which WHERE clause, which ORDER BY, which bucket width) is selected
+# from literals written in the module itself, keyed by a token that
+# `app/api/filters.py` has already checked against a closed allow-list, while
+# every *value* is bound as a parameter.
+#
+# The invariant is enforced by a test rather than by the linter, because the
+# linter cannot tell the two apart:
+#   tests/dashboard/test_scope_and_security.py
+#     ::test_no_query_builder_uses_string_formatting_on_a_parameter
+#     ::test_the_query_text_contains_no_formatted_filter_values
+#     ::test_a_hostile_search_term_is_bound_and_never_appears_in_the_sql
+"app/db/repositories/dashboard.py" = ["S608"]
+"app/db/repositories/jobs.py" = ["S608"]
+
+# B008 forbids a function call in an argument default. FastAPI's dependency
+# injection is built on exactly that: `Query(...)`, `Depends(...)` and `Header(...)`
+# are evaluated once at import and are what declare the route's contract.
+# Rewriting them to satisfy the rule would break the framework.
+"app/api/v1/**" = ["B008"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Architectural boundary enforcement (architecture.md §19.1):
+# nothing may import "upwards" from a lower layer.
+ban-relative-imports = "all"
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ---------------------------------------------------------------------------
+# mypy — strict on the layers where correctness is load-bearing
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+plugins = []
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+# architecture.md NFR-M4: --strict-grade checking on core and the AI seam.
+module = ["app.core.*", "app.ai.*"]
+disallow_any_generics = true
+disallow_untyped_calls = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+    "integration: requires a live PostgreSQL instance (skipped when DATABASE_URL is unreachable)",
+]

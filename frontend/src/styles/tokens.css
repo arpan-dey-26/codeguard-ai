@@ -1,0 +1,145 @@
+/*
+ * Design tokens.
+ *
+ * Every colour in the application resolves through one of these variables.
+ * Nothing in a component may use a literal hex value — that is what makes a
+ * theme switch a one-line change instead of a global find-and-replace.
+ *
+ * Values are space-separated RGB channels (not `rgb(...)`) so Tailwind can
+ * apply opacity modifiers: `bg-surface/60` works only in this form.
+ *
+ * Severity colours are semantic, never decorative, and are always paired with
+ * an icon and a text label in the UI — colour alone fails for colour-vision
+ * deficiency (architecture.md NFR-U2).
+ *
+ * Below the colours: elevation, motion and layer tokens. They are here for the
+ * same reason the colours are — so that "how fast does a hover respond" and
+ * "how far off the page does a popover sit" have one answer each, not one per
+ * component. A design system that tokenises colour and then scatters
+ * `duration-150` and `z-50` through forty files is only half a system.
+ */
+
+:root,
+:root[data-theme='light'] {
+  --surface: 255 255 255;
+  --surface-raised: 249 250 251;
+  --border: 229 231 235;
+  --text: 17 24 39;
+  --text-muted: 107 114 128;
+  --accent: 37 99 235;
+
+  --severity-critical: 220 38 38;
+  --severity-high: 234 88 12;
+  --severity-medium: 217 119 6;
+  --severity-low: 37 99 235;
+  --severity-info: 100 116 139;
+
+  /* Run and publication status. Separate from severity because they answer a
+     different question — "did the machinery work?" rather than "how bad is
+     this?" — and sharing one ramp would make a failed run look critical and a
+     critical finding look like an outage. */
+  --state-ok: 22 128 96;
+  --state-warn: 180 118 8;
+  --state-bad: 190 40 40;
+  --state-idle: 113 122 138;
+
+  /* Chart series. Four is the ceiling: a legend nobody can hold in their head
+     is a chart nobody reads. */
+  --series-1: 37 99 235;
+  --series-2: 13 148 136;
+  --series-3: 180 118 8;
+  --series-4: 147 90 200;
+  --grid: 226 230 237;
+}
+
+:root[data-theme='dark'] {
+  --surface: 9 11 16;
+  --surface-raised: 18 21 28;
+  --border: 38 43 54;
+  --text: 237 240 245;
+  --text-muted: 148 157 173;
+  --accent: 96 145 255;
+
+  --severity-critical: 248 113 113;
+  --severity-high: 251 146 60;
+  --severity-medium: 251 191 36;
+  --severity-low: 96 165 250;
+  --severity-info: 148 163 184;
+
+  --state-ok: 52 199 147;
+  --state-warn: 245 186 66;
+  --state-bad: 248 113 113;
+  --state-idle: 148 157 173;
+
+  --series-1: 96 145 255;
+  --series-2: 45 212 191;
+  --series-3: 245 186 66;
+  --series-4: 186 148 255;
+  --grid: 38 43 54;
+}
+
+/* ---------------------------------------------------------------- motion
+ *
+ * Four durations, because the UI makes four kinds of promise:
+ *
+ *   instant   a control acknowledging the pointer. Below ~120ms reads as
+ *             "already done" rather than "animating", which is the goal.
+ *   quick     a state change inside a component — a row highlighting, a value
+ *             replacing another.
+ *   panel     something arriving or leaving: a popover, an expanding card.
+ *             Long enough to see a direction, short enough not to wait.
+ *   entrance  a first paint, once per page. The only budget where a person
+ *             will tolerate half a second, and only because it happens once.
+ *
+ * Nothing in the application may invent a fifth. If a transition does not fit
+ * one of these, the transition is usually wrong.
+ */
+:root {
+  --dur-instant: 120ms;
+  --dur-quick: 200ms;
+  --dur-panel: 300ms;
+  --dur-entrance: 640ms;
+
+  /* Deceleration for anything entering or responding: fast out of the gate,
+     settling at the end. `ease-in-out` on a 120ms hover reads as sluggish
+     because the slow start is most of the duration. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A slightly softer curve for larger, slower movement, where the sharper
+     one overshoots perceptually. */
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  /* For something leaving: accelerate away, no settle. */
+  --ease-in: cubic-bezier(0.64, 0, 0.78, 0);
+
+  /* ------------------------------------------------------------- elevation
+   *
+   * Two-layer shadows: a tight contact shadow for the edge and a wide, soft
+   * one for the cast. A single large blur reads as a glow, not a lift.
+   *
+   * `raise` is the hover state of `flat`, not a separate level — the whole
+   * point is that the difference is legible as *movement*.
+   */
+  --shadow-flat: 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-raise: 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 8px 20px -8px rgb(0 0 0 / 0.14);
+  --shadow-overlay: 0 4px 8px -4px rgb(0 0 0 / 0.16), 0 16px 40px -12px rgb(0 0 0 / 0.28);
+
+  /* --------------------------------------------------------------- layers
+   * Named, so "which is on top" is answered here and not by whoever last
+   * needed their thing visible.
+   */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-nav: 20;
+  --z-tooltip: 40;
+  --z-overlay: 50;
+  --z-skip-link: 60;
+}
+
+:root[data-theme='dark'] {
+  /* Shadows carry almost no information on a near-black surface; depth in dark
+     mode comes from the surface stepping lighter and from a 1px top highlight
+     (see `.elevate-*` in globals.css). The shadows stay, deeper and tighter,
+     to hold the card's edge against the background. */
+  --shadow-flat: 0 1px 2px -1px rgb(0 0 0 / 0.5);
+  --shadow-raise: 0 2px 6px -2px rgb(0 0 0 / 0.6), 0 10px 24px -10px rgb(0 0 0 / 0.7);
+  --shadow-overlay: 0 6px 12px -6px rgb(0 0 0 / 0.7), 0 20px 48px -16px rgb(0 0 0 / 0.8);
+}

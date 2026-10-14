@@ -1,10 +1,45 @@
+# --- Secrets: the most important lines in this file --------------------------
 .env
 .env.*
 !.env.example
-node_modules/
-dist/
-.venv/
-__pycache__/
-.vercel/
 *.pem
 *.key
+*.p12
+*.pfx
+*private-key*
+*.crt
+secrets/
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# --- Node --------------------------------------------------------------------
+node_modules/
+frontend/dist/
+.vite/
+.test-build/
+.vercel/
+*.log
+npm-debug.log*
+
+# --- Local database / tooling ------------------------------------------------
+pgdata/
+.tmp/
+*.sqlite3
+
+# --- Editors / OS ------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

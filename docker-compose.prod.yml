@@ -1,0 +1,172 @@
+# CodeGuard AI — a production-shaped deployment.
+#
+# This file is a **reference topology**, not a turnkey production deployment,
+# and the difference is stated here rather than discovered later. What it
+# demonstrates correctly: the runtime image, non-root execution, a read-only
+# root filesystem, dropped capabilities, resource limits, the migration step as
+# a separate one-shot, and every secret arriving from the environment.
+#
+# What a real deployment still needs and this file does not provide:
+#
+#   * **TLS.** Terminated by whatever sits in front. Set TRUSTED_PROXY_COUNT to
+#     the number of hops and the application will read the forwarded address
+#     and scheme correctly.
+#   * **A managed database**, with backups that have been restored at least
+#     once. `db` below is here so the file runs; see docs/deployment.md.
+#   * **Secret management.** Environment variables are the interface; how they
+#     are populated (a platform secret store, a mounted file, a vault agent) is
+#     the deployment's decision.
+#   * **Log shipping and alerting.** The application emits structured JSON on
+#     stdout, which is the contract; collecting it is outside this file.
+#
+# Every value below with no default is intentional: the process refuses to
+# start without it, which is the whole point of the Phase 5 configuration
+# validator. A deployment that is missing a session secret should fail loudly
+# at deploy time, not serve unauthenticated at 3am.
+
+name: codeguard-ai-prod
+
+x-app-image: &app-image
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+    target: runtime
+    args:
+      # Pin this. See the Dockerfile header for how to resolve a digest.
+      PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12-slim-bookworm}
+  image: codeguard-ai:${IMAGE_TAG:-local}
+
+x-app-env: &app-env
+  APP_ENV: production
+  DEBUG: "false"
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+  TRUSTED_HOSTS: ${TRUSTED_HOSTS:?TRUSTED_HOSTS is required}
+  TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+  SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+  GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:?required}
+  GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:?required}
+  GITHUB_APP_ID: ${GITHUB_APP_ID:?required}
+  GITHUB_PRIVATE_KEY: ${GITHUB_PRIVATE_KEY:?required}
+  GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:?required}
+  AI_PROVIDER: ${AI_PROVIDER:-gemini}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-}
+  # Never set this in production. The configuration validator refuses to start
+  # if it is true; it is listed here so its absence is a visible decision.
+  DASHBOARD_ALLOW_UNAUTHENTICATED_READS: "false"
+
+x-hardening: &hardening
+  read_only: true
+  # /tmp must stay writable: Python writes there, and a read-only root without
+  # it produces failures that look like application bugs.
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  ulimits:
+    nofile:
+      soft: 4096
+      hard: 8192
+
+services:
+  # Migrations run once, before anything serves traffic. A separate service
+  # rather than a startup hook: two booting API instances would race each other
+  # on the same migration, and a failed migration should be a visible deploy
+  # failure rather than a crash loop.
+  migrate:
+    <<: [*app-image, *hardening]
+    container_name: codeguard-migrate
+    command: ["alembic", "upgrade", "head"]
+    environment: *app-env
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: [*app-image, *hardening]
+    container_name: codeguard-api
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --workers
+      - "${UVICORN_WORKERS:-2}"
+    environment: *app-env
+    expose:
+      - "8000"
+    # Not published to the host: a reverse proxy terminates TLS and forwards
+    # here. Publishing the port would make the plain-HTTP origin reachable
+    # directly, which defeats HSTS and the Secure cookie flag.
+    restart: unless-stopped
+    stop_grace_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3).status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: [*app-image, *hardening]
+    container_name: codeguard-worker
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *app-env
+      WORKER_SHUTDOWN_DRAIN_SECONDS: "${WORKER_SHUTDOWN_DRAIN_SECONDS:-120}"
+    restart: unless-stopped
+    # Must exceed WORKER_SHUTDOWN_DRAIN_SECONDS, or the drain never completes.
+    stop_grace_period: 150s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          # Higher than the API: a worker holds a parsed diff, a context
+          # document and a model response at once.
+          memory: 2g
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  db:
+    image: postgres:16-alpine
+    container_name: codeguard-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:-codeguard}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No published port. The database is reachable only on the compose network.
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-codeguard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pgdata:

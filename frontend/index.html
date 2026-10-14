@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeGuard AI</title>
+    <meta name="description" content="AI-powered GitHub code review and code quality monitoring." />
+    <!--
+      Theme is applied before first paint.
+
+      Reading the stored preference in React would mean the page renders once
+      with the default theme and then flips — the single most noticeable
+      theming bug. This runs synchronously in <head>, so the correct theme is
+      already on <html> when the first pixel is drawn. It is wrapped in
+      try/catch because localStorage throws in private-browsing contexts.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('codeguard-theme')
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.dataset.theme = stored || (prefersDark ? 'dark' : 'light')
+        } catch (_) {
+          document.documentElement.dataset.theme = 'dark'
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <!--
+        Static boot fallback (v0.6.1).
+
+        Removed by main.tsx the moment React is ready to render. If the bundle
+        fails to load, or a module throws before that line, this stays on screen
+        instead of an empty page — because "the page is blank" tells whoever
+        reports it nothing, and this tells them where to look.
+
+        Inline styles on purpose: the stylesheet arrives with the bundle, so at
+        this point there is no stylesheet. Colours match the dark default set on
+        <html> above.
+      -->
+      <div
+        id="boot-fallback"
+        style="
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          color: #e6e8eb;
+          background: #0b0d10;
+        "
+      >
+        <div style="max-width: 28rem">
+          <p style="font-weight: 600; letter-spacing: -0.01em">CodeGuard AI</p>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #9aa4b2">
+            Loading the dashboard…
+          </p>
+          <p style="margin-top: 1rem; font-size: 0.8125rem; color: #9aa4b2">
+            If this message stays, the JavaScript bundle did not load. Check the
+            browser console, and check that the dev server is running with
+            <code>npm run dev</code> in <code>frontend/</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+    <noscript>
+      <p style="font-family: system-ui, sans-serif; padding: 1rem">
+        CodeGuard AI needs JavaScript. The dashboard is a single-page
+        application and cannot render without it.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

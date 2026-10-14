@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".test-build",
+    "rootDir": "./src",
+    "jsx": "preserve"
+  },
+  "include": [
+    "src/vite-env.d.ts",
+    "src/types/node-shims.d.ts",
+    "src/utils/format.ts",
+    "src/utils/status.ts",
+    "src/utils/severity.ts",
+    "src/utils/cn.ts",
+    "src/types/domain.ts",
+    "src/types/api.ts",
+    "src/api/client.ts",
+    "src/api/endpoints.ts",
+    "src/utils/__tests__/**/*.ts",
+    "src/api/__tests__/**/*.ts"
+  ]
+}

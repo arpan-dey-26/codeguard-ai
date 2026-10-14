@@ -1,0 +1,59 @@
+# What must never enter a build context.
+#
+# `COPY . .` copies whatever is here into a layer, and a layer is forever: a
+# secret copied in and deleted in a later instruction is still in the image and
+# still extractable. The rules below are ordered by how much they would cost if
+# they were missing.
+
+# --- credentials -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+secrets/
+credentials/
+
+# --- history and tooling metadata ---------------------------------------------
+# `.git` carries every version of every file ever committed. A secret removed
+# in a later commit is still in the history, and copying it into an image
+# copies the history with it.
+.git
+.gitignore
+.github
+
+# --- test and development material --------------------------------------------
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+conftest.py
+
+# --- build and runtime debris --------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.tox/
+
+# --- editor and OS ------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# --- documentation -------------------------------------------------------------
+# Not secret, just weight. A smaller context is a faster build and a smaller
+# surface to reason about.
+docs/
+*.md
+!README.md

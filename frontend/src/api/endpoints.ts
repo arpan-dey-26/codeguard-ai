@@ -90,10 +90,10 @@ export const getTrends = (
 ): Promise<TrendResponse> =>
   apiFetch<TrendResponse>(`${V1}/analytics/trends${buildQuery({ ...params })}`)
 
-export const getProcessingHealth = (
-  params: RangeParams = {},
-): Promise<ProcessingHealthResponse> =>
-  apiFetch<ProcessingHealthResponse>(`${V1}/analytics/processing-health${buildQuery({ ...params })}`)
+export const getProcessingHealth = (params: RangeParams = {}): Promise<ProcessingHealthResponse> =>
+  apiFetch<ProcessingHealthResponse>(
+    `${V1}/analytics/processing-health${buildQuery({ ...params })}`,
+  )
 
 export const getCoverage = (params: RangeParams = {}): Promise<CoverageResponse> =>
   apiFetch<CoverageResponse>(`${V1}/analytics/coverage${buildQuery({ ...params })}`)
@@ -152,9 +152,7 @@ export interface ReviewRunListParams {
   cursor?: string | undefined
 }
 
-export const getReviewRuns = (
-  params: ReviewRunListParams = {},
-): Promise<Page<ReviewRunSummary>> =>
+export const getReviewRuns = (params: ReviewRunListParams = {}): Promise<Page<ReviewRunSummary>> =>
   apiFetch<Page<ReviewRunSummary>>(`${V1}/review-runs${buildQuery({ ...params })}`)
 
 export const getReviewRun = (id: string): Promise<ReviewRunDetailResponse> =>
@@ -210,8 +208,7 @@ export const getMe = (): Promise<MeResponse> => apiFetch<MeResponse>(`${V1}/me`)
  * whenever they visit it. Being a POST also means `apiFetch` attaches the CSRF
  * header, so the request has to come from this application.
  */
-export const logout = (): Promise<void> =>
-  apiFetch<void>(`${V1}/auth/logout`, { method: 'POST' })
+export const logout = (): Promise<void> => apiFetch<void>(`${V1}/auth/logout`, { method: 'POST' })
 
 export const logoutEverywhere = (): Promise<void> =>
   apiFetch<void>(`${V1}/auth/logout-all`, { method: 'POST' })

@@ -66,17 +66,15 @@ export class RootErrorBoundary extends Component<Props, State> {
           className="w-full max-w-lg rounded-lg border border-border bg-surface-raised p-6"
           role="alert"
         >
-          <h1 className="font-mono text-base font-semibold tracking-tight">
-            CodeGuard AI
-          </h1>
+          <h1 className="font-mono text-base font-semibold tracking-tight">CodeGuard AI</h1>
           <p className="mt-2 text-sm font-medium text-state-bad">
             {this.props.where
               ? `Something went wrong in ${this.props.where}.`
               : 'Something went wrong rendering this page.'}
           </p>
           <p className="mt-1 text-sm text-muted">
-            This is a bug in the dashboard, not something you did. The full
-            details are in the browser console.
+            This is a bug in the dashboard, not something you did. The full details are in the
+            browser console.
           </p>
 
           {/* The message, not the stack. A stack on screen is noise to almost

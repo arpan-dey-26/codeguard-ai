@@ -79,10 +79,7 @@ export function DashboardPage() {
         }
       />
 
-      <AsyncSection
-        query={overview}
-        skeleton={<SkeletonStatGrid tiles={6} />}
-      >
+      <AsyncSection query={overview} skeleton={<SkeletonStatGrid tiles={6} />}>
         {(data) => (
           <>
             <StatGrid>
@@ -147,12 +144,11 @@ export function DashboardPage() {
               </div>
             ) : null}
 
-            {data.runs.partial_success > 0 || data.runs.failed > 0 || data.runs.limited_coverage > 0 ? (
+            {data.runs.partial_success > 0 ||
+            data.runs.failed > 0 ||
+            data.runs.limited_coverage > 0 ? (
               <Card className="mt-4">
-                <SectionHeader
-                  title="Needs attention"
-                  hint="Outcomes that are not a clean pass."
-                />
+                <SectionHeader title="Needs attention" hint="Outcomes that are not a clean pass." />
                 <ul className="grid gap-2 text-sm sm:grid-cols-3">
                   <AttentionRow
                     count={data.runs.failed}
@@ -184,11 +180,7 @@ export function DashboardPage() {
           <SectionHeader title="Review activity" hint={`Attempts per day, UTC`} />
           <AsyncSection query={trends} skeleton={<SkeletonChart />}>
             {(data) => (
-              <TrendChart
-                points={data.points}
-                bucket={data.bucket}
-                timezone={data.timezone}
-              />
+              <TrendChart points={data.points} bucket={data.bucket} timezone={data.timezone} />
             )}
           </AsyncSection>
         </Card>
@@ -257,9 +249,9 @@ export function DashboardPage() {
                   }))}
                 />
                 <Caveat>
-                  These are <strong>structural</strong> rejections: the claim could not be
-                  anchored to the reviewed source. They are not confirmed false positives —
-                  no semantic evaluation has been run.
+                  These are <strong>structural</strong> rejections: the claim could not be anchored
+                  to the reviewed source. They are not confirmed false positives — no semantic
+                  evaluation has been run.
                 </Caveat>
               </>
             )}
@@ -305,9 +297,7 @@ export function DashboardPage() {
                     </Link>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <Mono className="hidden text-muted sm:inline">
-                      {shortSha(entry.head_sha)}
-                    </Mono>
+                    <Mono className="hidden text-muted sm:inline">{shortSha(entry.head_sha)}</Mono>
                     <RunStatusBadge status={entry.status} isStale={entry.is_stale} />
                     <span className="hidden w-16 text-right tabular-nums text-muted sm:inline">
                       {formatDuration(entry.duration_ms)}
@@ -343,10 +333,7 @@ function AttentionRow({
 }) {
   return (
     <li>
-      <Link
-        to={to}
-        className="block rounded-md border border-border px-3 py-2 hover:border-accent"
-      >
+      <Link to={to} className="block rounded-md border border-border px-3 py-2 hover:border-accent">
         <span className="tabular-nums text-content">{count}</span>{' '}
         <span className="text-content">{label}</span>
         <span className="block text-xs text-muted">{detail}</span>

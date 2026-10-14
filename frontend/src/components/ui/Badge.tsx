@@ -8,13 +8,7 @@ import { cn } from '@/utils/cn'
  * status. Domain meaning is applied by components in `components/domain`, so
  * this primitive stays reusable (architecture.md §20.1).
  */
-export function Badge({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
+export function Badge({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span
       className={cn(

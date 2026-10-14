@@ -84,7 +84,10 @@ export function TrendChart({
 
   // At most six labels, whatever the range: a daily axis over ninety days
   // would otherwise draw ninety overlapping dates.
-  const labelEvery = Math.max(1, Math.ceil(points.length / Math.max(2, Math.floor(plotWidth / 110))))
+  const labelEvery = Math.max(
+    1,
+    Math.ceil(points.length / Math.max(2, Math.floor(plotWidth / 110))),
+  )
 
   return (
     <ChartFrame
@@ -98,8 +101,8 @@ export function TrendChart({
       }))}
       footnote={
         <>
-          Buckets are {bucket}s in {timezone}. Superseded attempts are excluded —
-          they were overtaken by a newer commit rather than completed.
+          Buckets are {bucket}s in {timezone}. Superseded attempts are excluded — they were
+          overtaken by a newer commit rather than completed.
         </>
       }
     >

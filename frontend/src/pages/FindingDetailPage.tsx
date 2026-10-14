@@ -72,11 +72,7 @@ export function FindingDetailPage() {
               subtitle={
                 <span className="flex flex-wrap items-center gap-2">
                   <SeverityBadge severity={finding.severity} />
-                  <StatusPill
-                    label={humanise(finding.category)}
-                    glyph="◇"
-                    className="text-muted"
-                  />
+                  <StatusPill label={humanise(finding.category)} glyph="◇" className="text-muted" />
                   <ValidationBadge validation={finding.validation} />
                   <PublicationBadge isPublished={finding.is_published} />
                   {finding.is_stale ? (
@@ -105,16 +101,15 @@ export function FindingDetailPage() {
                   hint={`It failed the ${humanise(finding.rejection_reason)} gate.`}
                 />
                 <p className="text-sm text-muted">
-                  Structural validation could not anchor this claim to the reviewed source,
-                  so it was never posted to GitHub. It is recorded here because the
-                  rejections are how the platform measures its own behaviour over time.
+                  Structural validation could not anchor this claim to the reviewed source, so it
+                  was never posted to GitHub. It is recorded here because the rejections are how the
+                  platform measures its own behaviour over time.
                 </p>
                 <Caveat>
-                  A rejected claim is <strong>not</strong> a confirmed false positive. The
-                  gate that stopped it describes a problem with the claim’s{' '}
-                  <em>location or shape</em>, not with whether the issue it describes is
-                  real. Deciding that would take a semantic evaluation, which this system
-                  does not perform.
+                  A rejected claim is <strong>not</strong> a confirmed false positive. The gate that
+                  stopped it describes a problem with the claim’s <em>location or shape</em>, not
+                  with whether the issue it describes is real. Deciding that would take a semantic
+                  evaluation, which this system does not perform.
                 </Caveat>
               </Card>
             ) : null}
@@ -127,9 +122,7 @@ export function FindingDetailPage() {
                   <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
                     Impact
                   </h3>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-content">
-                    {finding.impact}
-                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-content">{finding.impact}</p>
                 </>
               ) : null}
               {finding.suggested_fix ? (
@@ -147,14 +140,12 @@ export function FindingDetailPage() {
                   <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
                     Reasoning given
                   </h3>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">
-                    {finding.rationale}
-                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{finding.rationale}</p>
                 </>
               ) : null}
               <Caveat>
-                This text was written by a language model. It has been checked for{' '}
-                <em>where</em> it points, not for whether it is right.
+                This text was written by a language model. It has been checked for <em>where</em> it
+                points, not for whether it is right.
               </Caveat>
             </Card>
 
@@ -183,10 +174,9 @@ export function FindingDetailPage() {
                   ))}
                 </pre>
                 <Caveat>
-                  One line, not a file window. Repository source is deliberately not stored
-                  by this platform, so the only source text available here is the snippet
-                  the validator matched. Open the pull request on GitHub for surrounding
-                  context.
+                  One line, not a file window. Repository source is deliberately not stored by this
+                  platform, so the only source text available here is the snippet the validator
+                  matched. Open the pull request on GitHub for surrounding context.
                 </Caveat>
               </Card>
             ) : null}
@@ -195,10 +185,7 @@ export function FindingDetailPage() {
               <SectionHeader title="Provenance" />
               <DefinitionList>
                 <Definition term="Repository">
-                  <Link
-                    to={`/repositories/${finding.repository_id}`}
-                    className="hover:text-accent"
-                  >
+                  <Link to={`/repositories/${finding.repository_id}`} className="hover:text-accent">
                     <Mono>{finding.repository_full_name}</Mono>
                   </Link>
                 </Definition>
@@ -231,13 +218,14 @@ export function FindingDetailPage() {
                   {finding.fingerprint}
                 </Definition>
                 <Definition term="Recorded">
-                  <time dateTime={finding.created_at ?? undefined} title={finding.created_at ?? undefined}>
+                  <time
+                    dateTime={finding.created_at ?? undefined}
+                    title={finding.created_at ?? undefined}
+                  >
                     {formatRelative(finding.created_at)}
                   </time>
                 </Definition>
-                {finding.cwe_id ? (
-                  <Definition term="CWE">{finding.cwe_id}</Definition>
-                ) : null}
+                {finding.cwe_id ? <Definition term="CWE">{finding.cwe_id}</Definition> : null}
                 {finding.is_published ? (
                   <Definition term="Published">
                     {formatDateTime(finding.published_at)}

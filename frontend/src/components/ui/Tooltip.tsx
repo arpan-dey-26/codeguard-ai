@@ -32,7 +32,17 @@
  * loop for a 200-character hint.
  */
 
-import { cloneElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import {
+  cloneElement,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
 import { cn } from '@/utils/cn'
 
 const OPEN_DELAY_MS = 380

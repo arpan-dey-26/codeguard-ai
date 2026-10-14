@@ -58,10 +58,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (state.status === 'anonymous') {
     return (
-      <Hero
-        mode={state.signInAvailable ? 'sign-in' : 'not-configured'}
-        onSignIn={() => signIn()}
-      />
+      <Hero mode={state.signInAvailable ? 'sign-in' : 'not-configured'} onSignIn={() => signIn()} />
     )
   }
 

@@ -41,8 +41,7 @@ export function useHealth(): State & { refetch: () => void } {
       .catch((error: unknown) => {
         if (cancelled) return
         const message = error instanceof Error ? error.message : 'Unable to reach the backend'
-        const kind =
-          error instanceof Error ? errorKind(error) : ('network' as const)
+        const kind = error instanceof Error ? errorKind(error) : ('network' as const)
         setState({ status: 'error', message, kind })
       })
     return () => {

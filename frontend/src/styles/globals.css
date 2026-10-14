@@ -112,8 +112,7 @@
 
   .tilt-plane {
     transform-style: preserve-3d;
-    transform: rotateX(calc(var(--tilt-y, 0) * -3.2deg))
-      rotateY(calc(var(--tilt-x, 0) * 3.2deg));
+    transform: rotateX(calc(var(--tilt-y, 0) * -3.2deg)) rotateY(calc(var(--tilt-x, 0) * 3.2deg));
     transition: transform var(--dur-quick) var(--ease-out);
     will-change: transform;
   }

@@ -149,9 +149,7 @@ export function FindingsPage() {
         <span className="flex flex-col gap-1">
           <ValidationBadge validation={row.validation} />
           {row.rejection_reason ? (
-            <span className="text-[11px] text-muted">
-              gate: {humanise(row.rejection_reason)}
-            </span>
+            <span className="text-[11px] text-muted">gate: {humanise(row.rejection_reason)}</span>
           ) : null}
         </span>
       ),
@@ -280,11 +278,10 @@ export function FindingsPage() {
         </AsyncSection>
 
         <Caveat>
-          <strong>Validated</strong> means the claim was checked against the diff and the
-          file at the reviewed commit — it is anchored to real code, not independently
-          proven. <strong>Rejected claim</strong> means it failed a structural validation
-          gate; it is <em>not</em> a confirmed false positive, because no semantic
-          evaluation has been run.{' '}
+          <strong>Validated</strong> means the claim was checked against the diff and the file at
+          the reviewed commit — it is anchored to real code, not independently proven.{' '}
+          <strong>Rejected claim</strong> means it failed a structural validation gate; it is{' '}
+          <em>not</em> a confirmed false positive, because no semantic evaluation has been run.{' '}
           <Link to="/settings" className="text-accent">
             What the system does and does not measure
           </Link>

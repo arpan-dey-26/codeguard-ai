@@ -55,7 +55,11 @@ export function RepositoryDetailPage() {
     return (
       <EmptyState
         title="Repository not found"
-        hint={<Link to="/repositories" className="text-accent">Back to repositories</Link>}
+        hint={
+          <Link to="/repositories" className="text-accent">
+            Back to repositories
+          </Link>
+        }
       />
     )
   }
@@ -74,8 +78,7 @@ export function RepositoryDetailPage() {
               subtitle={
                 <span className="flex flex-wrap items-center gap-2">
                   <span>
-                    {repository.installation_account_type} ·{' '}
-                    {repository.installation_account}
+                    {repository.installation_account_type} · {repository.installation_account}
                   </span>
                   <Mono className="text-muted">{repository.default_branch}</Mono>
                   {repository.is_private ? (
@@ -153,9 +156,7 @@ export function RepositoryDetailPage() {
                     {formatRelative(repository.latest_review_at)}
                   </time>
                 </Definition>
-                <Definition term="Connected">
-                  {formatDateTime(repository.created_at)}
-                </Definition>
+                <Definition term="Connected">{formatDateTime(repository.created_at)}</Definition>
                 <Definition term="Open findings">
                   {formatNumber(repository.open_findings)}
                 </Definition>
@@ -167,10 +168,7 @@ export function RepositoryDetailPage() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <SectionHeader
-            title="Validated findings by severity"
-            hint="Last 30 days"
-          />
+          <SectionHeader title="Validated findings by severity" hint="Last 30 days" />
           <AsyncSection query={severity} skeleton={<SkeletonChart />}>
             {(data) => (
               <BarList
@@ -209,12 +207,14 @@ export function RepositoryDetailPage() {
                   </div>
                 ) : null}
                 <Caveat>
-                  These figures are not reduced to a coverage percentage. A file can be
-                  absent because it is binary, because no parser is installed for its
-                  language, or because a budget stopped the build — and a single number
-                  would hide which.
+                  These figures are not reduced to a coverage percentage. A file can be absent
+                  because it is binary, because no parser is installed for its language, or because
+                  a budget stopped the build — and a single number would hide which.
                   {data.runs_over_budget > 0 ? (
-                    <> {data.runs_over_budget} of {data.runs_total} reviews hit a budget.</>
+                    <>
+                      {' '}
+                      {data.runs_over_budget} of {data.runs_total} reviews hit a budget.
+                    </>
                   ) : null}
                 </Caveat>
               </>

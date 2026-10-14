@@ -56,10 +56,7 @@ export function useReducedMotion(): boolean {
  * content must never be stuck in its pre-animation state because an API is
  * missing.
  */
-export function useInViewOnce<T extends Element>(): [
-  (node: T | null) => void,
-  boolean,
-] {
+export function useInViewOnce<T extends Element>(): [(node: T | null) => void, boolean] {
   const [seen, setSeen] = useState(false)
   const observed = useRef<T | null>(null)
   const observer = useRef<IntersectionObserver | null>(null)

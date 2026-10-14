@@ -14,10 +14,7 @@ export function SystemPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <PageHeader
-        title="System"
-        subtitle="Live report from the backend health endpoint."
-      />
+      <PageHeader title="System" subtitle="Live report from the backend health endpoint." />
 
       {health.status === 'loading' ? <SkeletonRows rows={4} /> : null}
 
@@ -58,7 +55,10 @@ export function SystemPage() {
           <Card>
             <h2 className="text-sm font-medium">GitHub integration</h2>
             <dl className="mt-2 space-y-1 text-sm">
-              <Row label="App ID" value={health.data.github.app_id_configured ? 'set' : 'not set'} />
+              <Row
+                label="App ID"
+                value={health.data.github.app_id_configured ? 'set' : 'not set'}
+              />
               <Row
                 label="Private key"
                 value={health.data.github.private_key_configured ? 'set' : 'not set'}

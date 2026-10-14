@@ -149,12 +149,7 @@ export function ReviewRunsPage() {
         }
       />
 
-      <AsyncSection
-        query={health}
-        skeleton={
-          <SkeletonStatGrid tiles={4} />
-        }
-      >
+      <AsyncSection query={health} skeleton={<SkeletonStatGrid tiles={4} />}>
         {(data) => (
           <>
             <StatGrid>
@@ -233,9 +228,7 @@ export function ReviewRunsPage() {
           isEmpty={(data) => data.items.length === 0}
           empty={
             <EmptyState
-              title={
-                filters.activeCount > 0 ? 'No runs match these filters' : 'No reviews yet'
-              }
+              title={filters.activeCount > 0 ? 'No runs match these filters' : 'No reviews yet'}
               hint={
                 filters.activeCount > 0
                   ? 'Try a wider range or a different outcome.'
@@ -269,9 +262,9 @@ export function ReviewRunsPage() {
         </AsyncSection>
 
         <Caveat>
-          Several attempts can exist for one pull request — a retry, or a new commit. They
-          are listed individually here and counted as attempts. The “pull requests
-          reviewed” figure on the{' '}
+          Several attempts can exist for one pull request — a retry, or a new commit. They are
+          listed individually here and counted as attempts. The “pull requests reviewed” figure on
+          the{' '}
           <Link to="/" className="text-accent">
             dashboard
           </Link>{' '}

@@ -73,9 +73,7 @@ export function PipelineDemo({ className }: { className?: string | undefined }) 
     }
     // One chain of timeouts rather than an interval, so it cannot run past the
     // end, and every handle is cleared on unmount.
-    const timers = STAGES.map((_, index) =>
-      setTimeout(() => setStep(index + 1), 520 + index * 380),
-    )
+    const timers = STAGES.map((_, index) => setTimeout(() => setStep(index + 1), 520 + index * 380))
     return () => timers.forEach(clearTimeout)
   }, [reduced])
 

@@ -109,7 +109,10 @@ export function PullRequestsPage() {
           <span className={row.open_critical_high > 0 ? 'text-state-warn' : undefined}>
             {formatNumber(row.validated_findings)}
           </span>
-          <span className="text-xs text-muted"> / {formatNumber(row.published_comments)} posted</span>
+          <span className="text-xs text-muted">
+            {' '}
+            / {formatNumber(row.published_comments)} posted
+          </span>
         </span>
       ),
     },
@@ -208,9 +211,9 @@ export function PullRequestsPage() {
       </Card>
 
       <p className="mt-3 text-xs text-muted">
-        “Current review” is the newest non-superseded run for the pull request’s current
-        head commit. A pull request whose head has not been reviewed shows{' '}
-        <em>Not reviewed</em> — which is not a pass.{' '}
+        “Current review” is the newest non-superseded run for the pull request’s current head
+        commit. A pull request whose head has not been reviewed shows <em>Not reviewed</em> — which
+        is not a pass.{' '}
         <Link to="/review-runs" className="text-accent">
           Every attempt is listed under review runs.
         </Link>

@@ -48,9 +48,7 @@ export function RepositoriesPage() {
       render: (row) => (
         <span className="flex items-center gap-2">
           <Mono>{row.full_name}</Mono>
-          {row.is_private ? (
-            <StatusPill label="Private" glyph="◆" className="text-muted" />
-          ) : null}
+          {row.is_private ? <StatusPill label="Private" glyph="◆" className="text-muted" /> : null}
           {!row.is_active ? (
             <StatusPill
               label="Inactive"
@@ -100,7 +98,10 @@ export function RepositoriesPage() {
       header: 'Last review',
       align: 'right',
       render: (row) => (
-        <time dateTime={row.latest_review_at ?? undefined} title={row.latest_review_at ?? undefined}>
+        <time
+          dateTime={row.latest_review_at ?? undefined}
+          title={row.latest_review_at ?? undefined}
+        >
           {formatRelative(row.latest_review_at)}
         </time>
       ),
@@ -141,7 +142,11 @@ export function RepositoriesPage() {
           isEmpty={(data) => data.items.length === 0}
           empty={
             <EmptyState
-              title={filters.activeCount > 0 ? 'No repositories match these filters' : 'No repositories yet'}
+              title={
+                filters.activeCount > 0
+                  ? 'No repositories match these filters'
+                  : 'No repositories yet'
+              }
               hint={
                 filters.activeCount > 0
                   ? 'Try a broader search, or clear the filters.'

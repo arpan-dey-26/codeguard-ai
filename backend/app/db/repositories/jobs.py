@@ -280,7 +280,9 @@ class JobRepository:
             ),
             {"job_id": job_id, "worker_id": worker_id},
         )
-        _warn_if_fenced_out(cast(CursorResult[Any], result).rowcount, job_id, worker_id, "completed")
+        _warn_if_fenced_out(
+            cast(CursorResult[Any], result).rowcount, job_id, worker_id, "completed"
+        )
 
     async def mark_retry(
         self,

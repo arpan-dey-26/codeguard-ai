@@ -8,12 +8,7 @@
 
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 
-export type FindingCategory =
-  | 'bug'
-  | 'security'
-  | 'performance'
-  | 'resource'
-  | 'maintainability'
+export type FindingCategory = 'bug' | 'security' | 'performance' | 'resource' | 'maintainability'
 
 export type FindingStatus = 'open' | 'resolved' | 'dismissed' | 'false_positive'
 

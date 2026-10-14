@@ -65,7 +65,12 @@ export function AsyncSection<T>({
     )
   }
 
-  const pending = <>{placeholderHeading}{skeleton ?? <SkeletonRows rows={4} />}</>
+  const pending = (
+    <>
+      {placeholderHeading}
+      {skeleton ?? <SkeletonRows rows={4} />}
+    </>
+  )
 
   if (state.status === 'loading' && state.data === null) return pending
 

@@ -25,7 +25,13 @@ import {
 } from '@/components/ui/primitives'
 import { useApiQuery } from '@/hooks/useApiQuery'
 import type { ReviewRunSummary } from '@/types/api'
-import { formatDateTime, formatDuration, formatNumber, formatRelative, shortSha } from '@/utils/format'
+import {
+  formatDateTime,
+  formatDuration,
+  formatNumber,
+  formatRelative,
+  shortSha,
+} from '@/utils/format'
 import { RUN_ERROR } from '@/utils/status'
 
 /**
@@ -102,9 +108,7 @@ export function PullRequestDetailPage() {
                     ) : null}
                   </span>
                 }
-                actions={
-                  <ExternalLink href={pr.html_url}>Open on GitHub</ExternalLink>
-                }
+                actions={<ExternalLink href={pr.html_url}>Open on GitHub</ExternalLink>}
               />
 
               <Card>
@@ -169,9 +173,9 @@ export function PullRequestDetailPage() {
                     </DefinitionList>
                     {currentRun.status === 'partial_success' ? (
                       <Caveat>
-                        This review <strong>completed</strong> and its findings are stored, but
-                        not all of them reached GitHub. Everything is listed below regardless
-                        of publication state.
+                        This review <strong>completed</strong> and its findings are stored, but not
+                        all of them reached GitHub. Everything is listed below regardless of
+                        publication state.
                       </Caveat>
                     ) : null}
                   </>
@@ -205,8 +209,8 @@ export function PullRequestDetailPage() {
                   </ol>
                 )}
                 <Caveat>
-                  Multiple attempts for one pull request are shown here in full, and are
-                  counted as attempts — never as separate pull requests in any total.
+                  Multiple attempts for one pull request are shown here in full, and are counted as
+                  attempts — never as separate pull requests in any total.
                 </Caveat>
               </Card>
 
@@ -341,8 +345,8 @@ function RunRow({ run, isCurrent }: { run: ReviewRunSummary; isCurrent: boolean 
       <p className="mt-1 text-xs text-muted">
         {formatNumber(run.claims_emitted)} claims ·{' '}
         {formatNumber(run.findings_inline + run.findings_summary)} validated ·{' '}
-        {formatNumber(run.rejected_claims)} rejected ·{' '}
-        {formatNumber(run.published_comments)} published · {formatDuration(run.duration_ms)}
+        {formatNumber(run.rejected_claims)} rejected · {formatNumber(run.published_comments)}{' '}
+        published · {formatDuration(run.duration_ms)}
         {run.error_code ? (
           <span className="text-state-warn"> · {RUN_ERROR[run.error_code] ?? run.error_code}</span>
         ) : null}

@@ -161,9 +161,11 @@ async def test_the_partial_unique_index_blocks_a_second_active_job(session_facto
     await _enqueue(session_factory, dedupe_key="sync_pr:1:42:abc")
     with pytest.raises(IntegrityError) as exc:
         async with session_factory() as session:
-            await session.execute(insert(Job).values(
-                job_type="sync_pull_request", payload={}, dedupe_key="sync_pr:1:42:abc"
-            ))
+            await session.execute(
+                insert(Job).values(
+                    job_type="sync_pull_request", payload={}, dedupe_key="sync_pr:1:42:abc"
+                )
+            )
     assert "uq_jobs_dedupe_key_active" in str(exc.value) or "unique" in str(exc.value).lower()
 
 

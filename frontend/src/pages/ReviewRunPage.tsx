@@ -58,7 +58,11 @@ export function ReviewRunPage() {
     return (
       <EmptyState
         title="Review not found"
-        hint={<Link to="/review-runs" className="text-accent">Back to review runs</Link>}
+        hint={
+          <Link to="/review-runs" className="text-accent">
+            Back to review runs
+          </Link>
+        }
       />
     )
   }
@@ -108,7 +112,11 @@ export function ReviewRunPage() {
           <StatusPill label="Analysed" glyph="✓" className="text-state-ok" />
         ) : (
           <StatusPill
-            label={row.skip_reason ? (SKIP_REASON[row.skip_reason] ?? humanise(row.skip_reason)) : 'Not analysed'}
+            label={
+              row.skip_reason
+                ? (SKIP_REASON[row.skip_reason] ?? humanise(row.skip_reason))
+                : 'Not analysed'
+            }
             glyph="○"
             className="text-state-idle"
             title="This file was not analysed, so no finding could be anchored inside it."
@@ -148,9 +156,7 @@ export function ReviewRunPage() {
                   </Link>
                 </span>
               }
-              actions={
-                <ExternalLink href={run.pull_request_url}>Open on GitHub</ExternalLink>
-              }
+              actions={<ExternalLink href={run.pull_request_url}>Open on GitHub</ExternalLink>}
             />
 
             <Card>
@@ -177,15 +183,15 @@ export function ReviewRunPage() {
               {run.is_stale ? (
                 <Caveat>
                   This review covered commit <Mono>{shortSha(run.head_sha)}</Mono>, which is no
-                  longer the pull request’s head. It is <strong>history</strong>, not the
-                  current result.
+                  longer the pull request’s head. It is <strong>history</strong>, not the current
+                  result.
                 </Caveat>
               ) : null}
 
               {run.status === 'partial_success' ? (
                 <Caveat>
-                  The review <strong>completed</strong> and every finding below is stored, but
-                  not all of them were published to GitHub
+                  The review <strong>completed</strong> and every finding below is stored, but not
+                  all of them were published to GitHub
                   {run.error_code ? <> — {RUN_ERROR[run.error_code] ?? run.error_code}</> : null}.
                   This is not a clean pass and not a failure.
                 </Caveat>

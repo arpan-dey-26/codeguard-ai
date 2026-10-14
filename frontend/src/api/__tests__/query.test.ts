@@ -31,9 +31,7 @@ describe('buildQuery', () => {
   })
 
   test('arrays expand into repeated keys, as the backend expects', () => {
-    expect(buildQuery({ severity: ['critical', 'high'] })).toBe(
-      '?severity=critical&severity=high',
-    )
+    expect(buildQuery({ severity: ['critical', 'high'] })).toBe('?severity=critical&severity=high')
   })
 
   test('an empty array contributes nothing', () => {

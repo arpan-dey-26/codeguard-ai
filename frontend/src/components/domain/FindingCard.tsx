@@ -60,9 +60,7 @@ export function FindingCard({
   // API's own answer to "did this move", so the card does not recompute it
   // from the two line numbers.
   const relocated =
-    finding.anchor_offset !== null &&
-    finding.anchor_offset !== 0 &&
-    finding.resolved_line !== null
+    finding.anchor_offset !== null && finding.anchor_offset !== 0 && finding.resolved_line !== null
 
   return (
     <li
@@ -98,7 +96,9 @@ export function FindingCard({
               <Mono className="text-content/80">{finding.file_path}</Mono>
               {finding.resolved_line === null ? (
                 <Tooltip content="The validator could not resolve this claim to a line in the diff, so it was never anchored.">
-                  <span tabIndex={0} className="cursor-help text-state-warn">no resolved line</span>
+                  <span tabIndex={0} className="cursor-help text-state-warn">
+                    no resolved line
+                  </span>
                 </Tooltip>
               ) : (
                 <Mono className="text-content/80">:{finding.resolved_line}</Mono>
@@ -130,10 +130,7 @@ export function FindingCard({
               {open ? 'Less' : 'Anchor detail'}
               <IconChevronDown
                 size={12}
-                className={cn(
-                  'transition-transform duration-quick ease-out',
-                  open && 'rotate-180',
-                )}
+                className={cn('transition-transform duration-quick ease-out', open && 'rotate-180')}
               />
             </button>
           </div>
@@ -195,10 +192,10 @@ export function FindingCard({
 
               {relocated ? (
                 <p className="mt-2.5 border-l-2 border-border pl-2.5 text-xs leading-relaxed text-muted">
-                  The model cited line <Mono>{finding.claimed_line}</Mono>; the validator
-                  matched the quoted source at <Mono>{finding.resolved_line}</Mono> and moved
-                  the comment there. Relocation is bounded and disclosed — it is not a
-                  correction of the model&rsquo;s reasoning.
+                  The model cited line <Mono>{finding.claimed_line}</Mono>; the validator matched
+                  the quoted source at <Mono>{finding.resolved_line}</Mono> and moved the comment
+                  there. Relocation is bounded and disclosed — it is not a correction of the
+                  model&rsquo;s reasoning.
                 </p>
               ) : null}
 
@@ -207,8 +204,8 @@ export function FindingCard({
                   <span className="font-medium text-state-warn">
                     Gate: {humanise(finding.rejection_reason)}
                   </span>{' '}
-                  — this claim was not published because it could not be verified against the
-                  diff. That is different from the claim being wrong.
+                  — this claim was not published because it could not be verified against the diff.
+                  That is different from the claim being wrong.
                 </p>
               ) : null}
 

@@ -52,12 +52,7 @@ export function BarList({
     '.'
 
   return (
-    <ChartFrame
-      title={title}
-      summary={summary ?? generated}
-      data={items}
-      footnote={footnote}
-    >
+    <ChartFrame title={title} summary={summary ?? generated} data={items} footnote={footnote}>
       <ul className="space-y-1.5">
         {items.map((item) => (
           <li key={item.key} className="flex items-center gap-3 text-sm">
@@ -70,9 +65,7 @@ export function BarList({
                 style={{ width: max === 0 ? '0%' : `${Math.max(2, (item.value / max) * 100)}%` }}
               />
             </span>
-            <span className="w-10 shrink-0 text-right tabular-nums text-content">
-              {item.value}
-            </span>
+            <span className="w-10 shrink-0 text-right tabular-nums text-content">{item.value}</span>
           </li>
         ))}
       </ul>

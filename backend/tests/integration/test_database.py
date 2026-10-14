@@ -79,9 +79,13 @@ async def test_migrated_database_contains_all_model_tables() -> None:
     engine = create_async_engine(TEST_DATABASE_URL)
     try:
         async with engine.connect() as conn:
-            tables = set((await conn.execute(text(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
-            ))).scalars())
+            tables = set(
+                (
+                    await conn.execute(
+                        text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+                    )
+                ).scalars()
+            )
         assert Base.metadata.tables
         assert set(Base.metadata.tables) <= tables
     finally:

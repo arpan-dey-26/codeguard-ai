@@ -77,8 +77,7 @@ export const NOT_REVIEWED: StatusPresentation = {
   label: 'Not reviewed',
   glyph: '–',
   className: 'text-muted',
-  description:
-    'The current commit of this pull request has not been reviewed. This is not a pass.',
+  description: 'The current commit of this pull request has not been reviewed. This is not a pass.',
 }
 
 export function runStatusOf(status: RunStatus | null | undefined): StatusPresentation {

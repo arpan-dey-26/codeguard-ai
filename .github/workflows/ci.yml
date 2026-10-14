@@ -47,7 +47,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U codeguard"
+          --health-cmd "pg_isready -U codeguard -d codeguard_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -316,11 +316,15 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e "." pip-audit
+          pip install -e "."
+          # Capture runtime dependencies before installing the audit tool.
+          # The editable application itself is local source, not a PyPI package.
+          pip freeze --exclude-editable > "$RUNNER_TEMP/runtime-requirements.txt"
+          pip install pip-audit
       - name: Audit runtime dependencies
         # Runtime only. Auditing the dev toolchain reports vulnerabilities in
         # things that never ship, which trains people to ignore the output.
-        run: pip-audit --strict --progress-spinner off
+        run: pip-audit --strict --progress-spinner off -r "$RUNNER_TEMP/runtime-requirements.txt"
 
   docker-build:
     name: Docker image

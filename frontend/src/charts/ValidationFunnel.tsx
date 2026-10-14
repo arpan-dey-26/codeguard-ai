@@ -108,15 +108,15 @@ export function ValidationFunnel({ funnel }: { funnel: FunnelCounts }) {
       </ChartFrame>
 
       <Caveat>
-        A <strong>rejected claim</strong> failed a structural validation gate — it could
-        not be anchored to the reviewed source. It is not a confirmed false positive, and
-        a <strong>validated finding</strong> is not an independently proven defect: it
-        means the claim matches real code at the reviewed commit.
+        A <strong>rejected claim</strong> failed a structural validation gate — it could not be
+        anchored to the reviewed source. It is not a confirmed false positive, and a{' '}
+        <strong>validated finding</strong> is not an independently proven defect: it means the claim
+        matches real code at the reviewed commit.
         {!balances && funnel.claims_emitted > 0 ? (
           <>
             {' '}
-            These stages do not sum for this run, which means it predates the funnel
-            accounting fix — treat the emitted count as a lower bound.
+            These stages do not sum for this run, which means it predates the funnel accounting fix
+            — treat the emitted count as a lower bound.
           </>
         ) : null}
       </Caveat>

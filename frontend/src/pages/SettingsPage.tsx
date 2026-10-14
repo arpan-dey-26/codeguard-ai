@@ -97,9 +97,9 @@ export function SettingsPage() {
               </DefinitionList>
 
               <Caveat>
-                No credential value is shown on this page, and the API has no field that
-                could carry one. These are statements <em>about</em> configuration, not the
-                configuration itself. Changing any of it is a deployment action.
+                No credential value is shown on this page, and the API has no field that could carry
+                one. These are statements <em>about</em> configuration, not the configuration
+                itself. Changing any of it is a deployment action.
               </Caveat>
 
               {data.dashboard_unauthenticated_reads_enabled ? (
@@ -108,10 +108,9 @@ export function SettingsPage() {
                     Development read-only access is enabled
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Anyone who can reach this local server can read its dashboard data
-                    without signing in. GitHub sign-in and per-user repository access
-                    are implemented. The backend refuses to start in production with
-                    unauthenticated reads enabled.
+                    Anyone who can reach this local server can read its dashboard data without
+                    signing in. GitHub sign-in and per-user repository access are implemented. The
+                    backend refuses to start in production with unauthenticated reads enabled.
                   </p>
                 </div>
               ) : null}
@@ -140,10 +139,7 @@ export function SettingsPage() {
             <>
               <ul className="space-y-2">
                 {data.installations.map((installation) => (
-                  <li
-                    key={installation.id}
-                    className="rounded-md border border-border px-3 py-2"
-                  >
+                  <li key={installation.id} className="rounded-md border border-border px-3 py-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-content">{installation.account_login}</span>
                       <span className="text-xs text-muted">{installation.account_type}</span>
@@ -169,8 +165,8 @@ export function SettingsPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted">
-                      {installation.active_repository_count} of{' '}
-                      {installation.repository_count} repositories monitored
+                      {installation.active_repository_count} of {installation.repository_count}{' '}
+                      repositories monitored
                       {installation.failed_deliveries > 0 ? (
                         <span className="text-state-warn">
                           {' '}
@@ -193,41 +189,41 @@ export function SettingsPage() {
         <SectionHeader title="What these numbers mean" />
         <dl className="space-y-3 text-sm">
           <MetricDefinition term="Claims emitted">
-            Items the model put in its findings array for a review. The raw output, before
-            anything was checked.
+            Items the model put in its findings array for a review. The raw output, before anything
+            was checked.
           </MetricDefinition>
           <MetricDefinition term="Validated findings">
-            Claims that passed every structural validation gate — the file was one we
-            showed the model, the line is in this pull request’s diff, and the source the
-            model quoted is genuinely at that line in the reviewed commit.{' '}
-            <strong>This does not mean the issue has been proven.</strong> It means the
-            claim points at real code.
+            Claims that passed every structural validation gate — the file was one we showed the
+            model, the line is in this pull request’s diff, and the source the model quoted is
+            genuinely at that line in the reviewed commit.{' '}
+            <strong>This does not mean the issue has been proven.</strong> It means the claim points
+            at real code.
           </MetricDefinition>
           <MetricDefinition term="Rejected claims">
             Claims that failed a structural gate and were never published.{' '}
-            <strong>These are not confirmed false positives.</strong> The gate describes a
-            problem with the claim’s location or shape. Whether the underlying issue is
-            real is a semantic question, and no semantic evaluation has been run.
+            <strong>These are not confirmed false positives.</strong> The gate describes a problem
+            with the claim’s location or shape. Whether the underlying issue is real is a semantic
+            question, and no semantic evaluation has been run.
           </MetricDefinition>
           <MetricDefinition term="Published comments">
-            Review comments GitHub confirmed. Read from stored publication state — never
-            inferred from which lines the platform considers commentable.
+            Review comments GitHub confirmed. Read from stored publication state — never inferred
+            from which lines the platform considers commentable.
           </MetricDefinition>
           <MetricDefinition term="Pull requests reviewed">
-            Distinct pull requests with at least one completed review. Several attempts at
-            one pull request count once here and separately under review attempts.
+            Distinct pull requests with at least one completed review. Several attempts at one pull
+            request count once here and separately under review attempts.
           </MetricDefinition>
           <MetricDefinition term="Anchor offset">
-            The distance between the line the model claimed and the line the validator
-            resolved by matching the quoted source. It describes the claimed-versus-resolved
-            relationship <em>under this system’s relocation policy</em>.{' '}
-            <strong>It is not an accuracy score</strong>, and this dashboard does not
-            publish one — that would need a labelled benchmark, which does not exist.
+            The distance between the line the model claimed and the line the validator resolved by
+            matching the quoted source. It describes the claimed-versus-resolved relationship{' '}
+            <em>under this system’s relocation policy</em>.{' '}
+            <strong>It is not an accuracy score</strong>, and this dashboard does not publish one —
+            that would need a labelled benchmark, which does not exist.
           </MetricDefinition>
           <MetricDefinition term="Coverage">
             Files changed, analysed and not analysed, reported separately. Not reduced to a
-            percentage, because a file can be absent for reasons that are not comparable —
-            binary content, no parser for the language, or a review budget.
+            percentage, because a file can be absent for reasons that are not comparable — binary
+            content, no parser for the language, or a review budget.
           </MetricDefinition>
         </dl>
       </Card>
@@ -235,13 +231,7 @@ export function SettingsPage() {
   )
 }
 
-function MetricDefinition({
-  term,
-  children,
-}: {
-  term: string
-  children: React.ReactNode
-}) {
+function MetricDefinition({ term, children }: { term: string; children: React.ReactNode }) {
   return (
     <div>
       <dt className="text-sm font-medium text-content">{term}</dt>

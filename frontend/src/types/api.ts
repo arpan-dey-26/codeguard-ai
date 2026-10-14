@@ -101,13 +101,7 @@ export interface ApiMeta {
  * result.
  */
 export type RunStatus =
-  | 'queued'
-  | 'running'
-  | 'succeeded'
-  | 'partial_success'
-  | 'failed'
-  | 'superseded'
-  | 'skipped'
+  'queued' | 'running' | 'succeeded' | 'partial_success' | 'failed' | 'superseded' | 'skipped'
 
 export type PullRequestState = 'open' | 'closed' | 'merged'
 

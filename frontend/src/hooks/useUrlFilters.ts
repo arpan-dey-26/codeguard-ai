@@ -37,10 +37,7 @@ export function useUrlFilters(): UrlFilters {
   const [params, setParams] = useSearchParams()
 
   const write = useCallback(
-    (
-      mutate: (next: URLSearchParams) => void,
-      options: { keepCursor?: boolean } = {},
-    ) => {
+    (mutate: (next: URLSearchParams) => void, options: { keepCursor?: boolean } = {}) => {
       const keepCursor = options.keepCursor ?? false
       const next = new URLSearchParams(params)
       mutate(next)

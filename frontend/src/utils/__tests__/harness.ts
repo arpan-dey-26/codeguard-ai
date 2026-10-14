@@ -56,7 +56,9 @@ export function expect<T>(actual: T) {
     },
     notToContain(needle: string): void {
       if (typeof actual === 'string' && actual.includes(needle)) {
-        throw new Error(`expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(needle)}`)
+        throw new Error(
+          `expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(needle)}`,
+        )
       }
     },
     toBeTruthy(): void {

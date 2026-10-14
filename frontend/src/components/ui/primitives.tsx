@@ -48,7 +48,9 @@ export function PageHeader({
           ) : null}
           {/* `truncate` only on the single-line case: a wrapped title that is
               also truncated loses its second line entirely. */}
-          <h1 className="break-words text-xl font-semibold tracking-tight text-content sm:truncate">{title}</h1>
+          <h1 className="break-words text-xl font-semibold tracking-tight text-content sm:truncate">
+            {title}
+          </h1>
           {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
@@ -210,9 +212,7 @@ export function InfoDot({ text }: { text: string }) {
 }
 
 export function StatGrid({ children }: { children: ReactNode }) {
-  return (
-    <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">{children}</dl>
-  )
+  return <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">{children}</dl>
 }
 
 /* -- status pills --------------------------------------------------------- */
@@ -267,7 +267,9 @@ export function Definition({
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted">{term}</dt>
-      <dd className={cn('mt-0.5 break-words text-sm text-content', mono && 'font-mono text-[13px]')}>
+      <dd
+        className={cn('mt-0.5 break-words text-sm text-content', mono && 'font-mono text-[13px]')}
+      >
         {children}
       </dd>
     </div>
@@ -565,13 +567,7 @@ export function SkeletonChart({ className }: { className?: string | undefined })
 }
 
 /** Matches `Table`: a header row, then body rows at the real row height. */
-export function SkeletonTable({
-  rows = 6,
-  columns = 4,
-}: {
-  rows?: number
-  columns?: number
-}) {
+export function SkeletonTable({ rows = 6, columns = 4 }: { rows?: number; columns?: number }) {
   return (
     <div role="status" aria-label="Loading table">
       <div className="flex gap-3 border-b border-border px-3 py-2">
@@ -586,10 +582,7 @@ export function SkeletonTable({
           style={{ animationDelay: `${Math.min(row, 5) * 70}ms` }}
         >
           {Array.from({ length: columns }, (_, column) => (
-            <Skeleton
-              key={column}
-              className={cn('h-3', column === 0 ? 'w-1/3' : 'flex-1')}
-            />
+            <Skeleton key={column} className={cn('h-3', column === 0 ? 'w-1/3' : 'flex-1')} />
           ))}
         </div>
       ))}
@@ -691,10 +684,7 @@ export function ErrorState({
   const [retrying, setRetrying] = useState(false)
 
   return (
-    <div
-      className="panel animate-fade-in border-state-bad/35 bg-state-bad/[0.04] p-4"
-      role="alert"
-    >
+    <div className="panel animate-fade-in border-state-bad/35 bg-state-bad/[0.04] p-4" role="alert">
       <div className="flex items-start gap-2.5">
         <span aria-hidden="true" className="mt-[1px] shrink-0 text-state-bad">
           {kind === 'network' ? <IconOffline size={16} /> : <IconAlert size={16} />}

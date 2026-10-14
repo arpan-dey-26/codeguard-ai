@@ -89,31 +89,34 @@ export function TiltCard({
   const plane = useRef<HTMLDivElement | null>(null)
   const reduced = useReducedMotion()
 
-  const onPointerMove = useCallback(
-    (event: PointerEvent) => {
-      // Mouse only. A touch drag across a card should scroll the page, not
-      // rotate it, and a stylus hover is not worth the special case.
-      if (event.pointerType !== 'mouse') return
-      const node = plane.current
-      if (node === null) return
+  const onPointerMove = useCallback((event: PointerEvent) => {
+    // Mouse only. A touch drag across a card should scroll the page, not
+    // rotate it, and a stylus hover is not worth the special case.
+    if (event.pointerType !== 'mouse') return
+    const node = plane.current
+    if (node === null) return
 
-      const box = event.currentTarget.getBoundingClientRect()
-      // -1 … 1 from the centre. Writing normalised values rather than degrees
-      // keeps the angle a design decision in CSS, where the rest of the
-      // motion vocabulary lives.
-      const x = Math.max(-TILT_CLAMP, Math.min(TILT_CLAMP, ((event.clientX - box.left) / box.width - 0.5) * 2))
-      const y = Math.max(-TILT_CLAMP, Math.min(TILT_CLAMP, ((event.clientY - box.top) / box.height - 0.5) * 2))
+    const box = event.currentTarget.getBoundingClientRect()
+    // -1 … 1 from the centre. Writing normalised values rather than degrees
+    // keeps the angle a design decision in CSS, where the rest of the
+    // motion vocabulary lives.
+    const x = Math.max(
+      -TILT_CLAMP,
+      Math.min(TILT_CLAMP, ((event.clientX - box.left) / box.width - 0.5) * 2),
+    )
+    const y = Math.max(
+      -TILT_CLAMP,
+      Math.min(TILT_CLAMP, ((event.clientY - box.top) / box.height - 0.5) * 2),
+    )
 
-      // Direct style writes, deliberately outside React. Routing 60 pointer
-      // events a second through `setState` would re-render the card's whole
-      // subtree for a visual effect that never changes its content.
-      node.style.setProperty('--tilt-x', String(x))
-      node.style.setProperty('--tilt-y', String(y))
-      node.style.setProperty('--pointer-x', `${((event.clientX - box.left) / box.width) * 100}%`)
-      node.style.setProperty('--pointer-y', `${((event.clientY - box.top) / box.height) * 100}%`)
-    },
-    [],
-  )
+    // Direct style writes, deliberately outside React. Routing 60 pointer
+    // events a second through `setState` would re-render the card's whole
+    // subtree for a visual effect that never changes its content.
+    node.style.setProperty('--tilt-x', String(x))
+    node.style.setProperty('--tilt-y', String(y))
+    node.style.setProperty('--pointer-x', `${((event.clientX - box.left) / box.width) * 100}%`)
+    node.style.setProperty('--pointer-y', `${((event.clientY - box.top) / box.height) * 100}%`)
+  }, [])
 
   const onPointerLeave = useCallback(() => {
     const node = plane.current

@@ -59,9 +59,10 @@ def test_settings_load_without_any_api_key() -> None:
     assert settings.claude_api_key is None
 
 
-def test_gemini_model_has_no_hardcoded_default() -> None:
+def test_gemini_model_has_no_hardcoded_default(monkeypatch: pytest.MonkeyPatch) -> None:
     """Model identifiers are chosen against current vendor docs, not guessed."""
-    assert _base().gemini_model is None
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    assert _base(_env_file=None).gemini_model is None
 
 
 def test_sync_database_url_is_rejected() -> None:

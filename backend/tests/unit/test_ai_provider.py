@@ -29,6 +29,9 @@ def _settings(**overrides: object) -> Settings:
     defaults: dict[str, object] = {
         "app_env": AppEnv.TEST,
         "database_url": "postgresql+asyncpg://u:p@localhost:5432/db",
+        # Provider scenarios must not inherit a developer or CI model/key.
+        "gemini_model": None,
+        "gemini_api_key": None,
     }
     defaults.update(overrides)
     return Settings(**defaults)  # type: ignore[arg-type]

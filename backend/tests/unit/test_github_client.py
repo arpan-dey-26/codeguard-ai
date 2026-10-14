@@ -374,14 +374,14 @@ async def test_malformed_rate_limit_headers_do_not_break_the_request() -> None:
 
 def test_retry_delay_honours_a_server_directed_delay() -> None:
     """Substituting our own backoff for a Retry-After earns a longer ban."""
-    client = GitHubClient(_settings(), StubTokenProvider(), client=httpx.AsyncClient())
+    client = _client(lambda request: httpx.Response(500))
     delay = client._retry_delay(1, ThrottledError("slow down", retry_after=42))
     assert delay == 42.0
 
 
 def test_retry_delay_is_jittered() -> None:
     """Without jitter, everything that failed together retries together."""
-    client = GitHubClient(_settings(), StubTokenProvider(), client=httpx.AsyncClient())
+    client = _client(lambda request: httpx.Response(500))
     random.seed(1)
     delays = {round(client._retry_delay(2, None), 6) for _ in range(20)}
     assert len(delays) > 1

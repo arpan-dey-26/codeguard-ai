@@ -98,8 +98,7 @@ def _body(findings=None, summary="One issue found."):
 
 
 def _provider(handler, **settings_overrides):
-    transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     return GeminiProvider(_settings(**settings_overrides), client=client)
 
 

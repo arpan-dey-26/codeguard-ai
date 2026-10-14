@@ -243,10 +243,26 @@ jobs:
         # httpx.MockTransport; a test that built a bare AsyncClient would leave
         # the sandbox.
         run: |
-          if grep -rn "httpx.AsyncClient(" tests/ | grep -v "MockTransport"; then
-            echo "::error::A test builds an httpx client with no mock transport."
-            exit 1
-          fi
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          offenders = []
+          for path in Path("tests").rglob("*.py"):
+              for node in ast.walk(ast.parse(path.read_text())):
+                  if not isinstance(node, ast.Call):
+                      continue
+                  if ast.unparse(node.func) != "httpx.AsyncClient":
+                      continue
+                  transport = next((k.value for k in node.keywords if k.arg == "transport"), None)
+                  if not (
+                      isinstance(transport, ast.Call)
+                      and ast.unparse(transport.func) == "httpx.MockTransport"
+                  ):
+                      offenders.append(f"{path}:{node.lineno}")
+          if offenders:
+              raise SystemExit(f"::error::Test clients without mock transports: {offenders}")
+          PY
           echo "Every test HTTP client is mock-backed."
 
       - name: Webhook replay harness smoke test
